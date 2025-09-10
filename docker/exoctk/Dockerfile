@@ -34,10 +34,6 @@ WORKDIR /exoctk
 # Install very specific versions of packages
 RUN pip install svo-filters==0.4.4
 
-# Install celery and redis
-RUN pip install celery
-RUN pip install redis
-
 ARG exoctk_repo
 
 # Clone exoctk repository

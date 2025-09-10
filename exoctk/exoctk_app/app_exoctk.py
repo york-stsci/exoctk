@@ -18,6 +18,7 @@ from flask import Flask, make_response, render_template, Response, request, send
 import numpy as np
 
 from exoctk import log_exoctk
+from exoctk.exoctk_app import form_validation as fv
 from exoctk.contam_visibility.new_vis_plot import build_visibility_plot, get_exoplanet_positions
 from exoctk.contam_visibility import field_simulator as fs
 from exoctk.contam_visibility import contamination_figure as cf
@@ -30,7 +31,6 @@ from exoctk.modelgrid import ModelGrid
 from exoctk.phase_constraint_overlap.phase_constraint_overlap import phase_overlap_constraint, calculate_pre_duration
 from exoctk.throughputs import Throughput
 from exoctk.utils import filter_table, get_env_variables, get_target_data, get_canonical_name
-from . import form_validation as fv
 
 from celery import Celery
 
