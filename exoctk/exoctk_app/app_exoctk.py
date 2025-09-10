@@ -15,7 +15,7 @@ from bokeh.embed import components
 from bokeh.resources import INLINE
 import flask
 from flask import Flask, make_response, render_template, Response, request, send_file, session, jsonify, current_app
-import form_validation as fv
+import .form_validation as fv
 import numpy as np
 
 from exoctk import log_exoctk

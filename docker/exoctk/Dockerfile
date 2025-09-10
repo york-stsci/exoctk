@@ -50,6 +50,6 @@ RUN pip install -e .
 EXPOSE 5000
 
 # Run exoctk
-WORKDIR /exoctk
+WORKDIR /exoctk/exoctk/exoctk
 # CMD ["tail", "-f", "/dev/null"]
-CMD ["python", "/exoctk/exoctk/exoctk/exoctk_app/app_exoctk.py"]
+CMD ["flask", "--app", "exoctk_app", "run"]
