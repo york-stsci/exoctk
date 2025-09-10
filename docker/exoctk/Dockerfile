@@ -16,6 +16,7 @@ WORKDIR /exoctk
 ENV EXOCTK_DATA="/exoctk/exoctk_data/"
 ENV MODELGRID_DIR="/exoctk/exoctk_data/modelgrid/"
 ENV EXOCTK_VERSION=${exoctk_version}
+ENV FLASK_APP=app_exoctk.py
 
 # Install necessary base software
 RUN apk update
