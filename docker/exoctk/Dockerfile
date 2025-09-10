@@ -45,7 +45,13 @@ RUN pip install -e .
 # Set up the port that exoctk will listen on
 EXPOSE 5000
 
+# Add the entrypoint scripts
+WORKDIR /exoctk
+COPY ./exoctk_entrypoint.sh exoctk_entrypoint.sh
+RUN chmod +x exoctk_entrypoint.sh
+COPY ./worker_entrypoint.sh worker_entrypoint.sh
+RUN chmod +x worker_entrypoint.sh
+
 # Run exoctk
 WORKDIR /exoctk/exoctk/exoctk
-# CMD ["tail", "-f", "/dev/null"]
-CMD ["flask", "--app", "exoctk_app", "run"]
+CMD ["tail", "-f", "/dev/null"]

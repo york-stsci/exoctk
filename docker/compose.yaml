@@ -13,6 +13,7 @@ services:
         - exoctk_data=$EXOCTK_DATA
         - has_exo=$HAS_EXO
         - exoctk_repo=https://github.com/york-stsci/exoctk
+    entrypoint: /exoctk/exoctk_entrypoint.sh
     volumes:
       - exoctk_data:/exoctk/exoctk_data
     ports:
@@ -40,13 +41,14 @@ services:
   worker:
     build:
       context: ./exoctk
-      dockerfile: CeleryDockerfile
+      dockerfile: Dockerfile
       args:
         - exoctk_version=celery
         - python_version=3.11
         - exoctk_data=$EXOCTK_DATA
         - has_exo=$HAS_EXO
         - exoctk_repo=https://github.com/york-stsci/exoctk
+    entrypoint: /exoctk/worker_entrypoint.sh
     volumes:
       - exoctk_data:/exoctk/exoctk_data
     depends_on:
