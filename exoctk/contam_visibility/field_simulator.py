@@ -16,6 +16,7 @@ from pkg_resources import resource_filename
 import logging
 import datetime
 from urllib.parse import quote_plus
+import warnings
 
 import astropy.coordinates as crd
 from astropy.io import fits
@@ -39,6 +40,7 @@ from scipy.ndimage.interpolation import rotate
 import numpy as np
 import pysiaf
 import regions
+import erfa
 
 from ..utils import get_env_variables, check_for_data, add_array_at_position, replace_NaNs
 from .new_vis_plot import build_visibility_plot, get_exoplanet_positions
@@ -86,6 +88,12 @@ def parse_log():
 Vizier.columns = ["**", "+_r"]
 Gaia.MAIN_GAIA_TABLE = "gaiaedr3.gaia_source" # DR2 is default catalog
 Gaia.ROW_LIMIT = 100
+
+warnings.simplefilter("ignore", category=RuntimeWarning)
+warnings.simplefilter("ignore", category=erfa.ErfaWarning)
+np.seterr(divide='ignore', invalid='ignore')
+
+from exoctk import utils
 
 APERTURES = {'NIS_SOSSFULL': {'inst': 'NIRISS', 'full': 'NIS_SOSSFULL', 'scale': 0.065, 'rad': 2.5, 'lam': [0.8, 2.8],
                               'c0x0': 905, 'c0y0': 1467, 'c1x0': -0.013, 'c1y0': -0.1, 'c1y1': 0.12, 'c1x1': -0.03, 'c2y1': -0.011,
@@ -752,6 +760,13 @@ def calc_v3pa(V3PA, stars, aperture, data=None, tilt=0, plot=False, verbose=Fals
     # Make results dict
     result = {'pa': V3PA, 'target': np.sum(targframes, axis=0), 'target_traces': targframes,
               'contaminants': starframe, 'sources': FOVstars, 'contam_levels': pctlines}
+    # Calculate contam/total counts in each detector column
+    pctframe_o1 = np.divide(starframe, simframe_o1, where=simframe_o1 != 0)
+    pctframe_o2 = np.divide(starframe, simframe_o2, where=simframe_o2 != 0)
+    pctframe_o3 = np.divide(starframe, simframe_o3, where=simframe_o3 != 0)
+    pctline_o1 = np.nanmean(pctframe_o1 * mask1, axis=0)
+    pctline_o2 = np.nanmean(pctframe_o2 * mask2, axis=0)
+    pctline_o3 = np.nanmean(pctframe_o3 * mask3, axis=0)
 
     if logging:
         log_checkpoint('Compiled final results.')
