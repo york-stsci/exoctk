@@ -8,10 +8,11 @@ services:
       context: ./exoctk
       dockerfile: Dockerfile
       args:
-        - exoctk_version=v1.2.6.3
+        - exoctk_version=celery
         - python_version=3.11
         - exoctk_data=$EXOCTK_DATA
         - has_exo=$HAS_EXO
+        - exoctk_repo=https://github.com/york-stsci/exoctk
     volumes:
       - exoctk_data:/exoctk/exoctk_data
     ports:
@@ -22,9 +23,10 @@ services:
       context: ./pandexo
       dockerfile: Dockerfile
       args:
+        - pandexo_branch=dhs
         - pandexo_version=3.0.0
         - python_version=3.11
-        - pandeia_version=3.2
+        - pandeia_version=2025.7
         - has_exo=$HAS_EXO
         - has_pandeia=$HAS_PANDEIA
         - has_syn=$HAS_SYN
@@ -34,6 +36,22 @@ services:
       - synphot_data:/data/trds
     ports:
       - "1111:1111"
+    restart: unless-stopped
+  worker:
+    build:
+      context: ./exoctk
+      dockerfile: CeleryDockerfile
+      args:
+        - exoctk_version=celery
+        - python_version=3.11
+        - exoctk_data=$EXOCTK_DATA
+        - has_exo=$HAS_EXO
+        - exoctk_repo=https://github.com/york-stsci/exoctk
+    volumes:
+      - exoctk_data:/exoctk/exoctk_data
+    depends_on:
+      - redis
+      - exoctk
     restart: unless-stopped
 volumes:
   exoctk_data:
