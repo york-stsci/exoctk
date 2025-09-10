@@ -4,6 +4,8 @@ import json
 import os
 import sys
 from pkg_resources import resource_filename
+import tempfile
+from datetime import datetime
 
 from astropy.coordinates import SkyCoord
 import astropy.table as at
@@ -12,7 +14,7 @@ import astropy.units as u
 from bokeh.embed import components
 from bokeh.resources import INLINE
 import flask
-from flask import Flask, make_response, render_template, Response, request, send_file, jsonify, current_app
+from flask import Flask, make_response, render_template, Response, request, send_file, session, jsonify, current_app
 import form_validation as fv
 import numpy as np
 
@@ -100,25 +102,6 @@ def check_auth(username, password):
     """
 
     return username == 'admin' and password == 'secret'
-
-
-@app_exoctk.route('/download', methods=['POST'])
-def exoctk_savefile():
-    """Save results to file
-
-    Returns
-    -------
-    ``flask.make_response`` obj
-        Returns response including results in txt form.
-    """
-
-    file_as_string = eval(request.form['file_as_string'])
-
-    response = make_response(file_as_string)
-    response.headers["Content-type"] = 'text; charset=utf-8'
-    response.headers["Content-Disposition"] = "attachment; filename=ExoCTK_results.txt"
-
-    return response
 
 
 @app_exoctk.route('/fortney', methods=['GET', 'POST'])
@@ -532,7 +515,8 @@ def contam_visibility():
                     # Add a companion
                     companion = None
                     if comp_teff is not None and comp_mag is not None and comp_dist is not None and comp_pa is not None:
-                        companion = {'name': 'Companion', 'ra': ra_deg, 'dec': dec_deg, 'teff': comp_teff, 'delta_mag': comp_mag, 'dist': comp_dist, 'pa': comp_pa}
+                        companion = {'name': 'Companion', 'ra': ra_deg, 'dec': dec_deg, 'teff': comp_teff,
+                                     'delta_mag': comp_mag, 'dist': comp_dist, 'pa': comp_pa}
 
                     # Make field simulation
                     params = {'ra': ra_deg, 'dec': dec_deg, 'aperture': form.inst.data, 'target_date': form.epoch.data, 'multi': False}
@@ -544,16 +528,6 @@ def contam_visibility():
 
                     # Make the plot
                     # contam_plot = fs.contam_slider_plot(results)
-
-                    # Get bad PA list from missing angles between 0 and 360
-                    badPAs = [j for j in np.arange(0, 360) if j not in [i['pa'] for i in results]]
-
-                    # Make old contam plot
-                    starCube = np.zeros((362, 2048, 96 if form.inst.data=='NIS_SUBSTRIP96' else 256))
-                    starCube[0, :, :] = (targframe[0]).T[::-1, ::-1]
-                    starCube[1, :, :] = (targframe[1]).T[::-1, ::-1]
-                    starCube[2:, :, :] = starcube.swapaxes(1, 2)[:, ::-1, ::-1]
-                    contam_plot = cf.contam(starCube, form.inst.data, targetName=form.targname.data, badPAs=badPAs)
 
                 else:
 
@@ -775,7 +749,6 @@ def limb_darkening():
         # Store the tables as a string
         keep_cols = ['Teff', 'logg', 'FeH', 'profile', 'filter', 'wave_min', 'wave_eff', 'wave_max', 'c1', 'e1', 'c2', 'e2', 'c3', 'e3', 'c4', 'e4']
         print_table = ld.results[[col for col in keep_cols if col in ld.results.colnames]]
-        file_as_string = '\n'.join(print_table.pformat(max_lines=-1, max_width=-1))
 
         # Make a table for each profile with a row for each wavelength bin
         profile_tables = []
@@ -810,13 +783,11 @@ def limb_darkening():
 
         # Make a table for each profile with a row for each wavelength bin
         profile_spam_tables = ''
-        spam_file_as_string = ''
         if ld.spam_results is not None:
 
             # Store SPAM tables as string
             keep_cols = ['Teff', 'logg', 'FeH', 'profile', 'filter', 'wave_min', 'wave_eff', 'wave_max', 'c1', 'c2']
             print_spam_table = ld.spam_results[[col for col in keep_cols if col in ld.spam_results.colnames]]
-            spam_file_as_string = '\n'.join(print_spam_table.pformat(max_lines=-1, max_width=-1))
             profile_spam_tables = []
             for profile in list(np.unique(ld.spam_results['profile'])):
 
@@ -840,12 +811,28 @@ def limb_darkening():
                 html_table = header + html_table
                 profile_spam_tables.append(html_table)
 
-        return render_template('limb_darkening_results.html', form=form,
-                               table=profile_tables, spam_table=profile_spam_tables,
-                               script=script, plot=div, spam_file_as_string=repr(spam_file_as_string),
-                               file_as_string=repr(file_as_string),
-                               filt_plot=filt_plot, filt_script=filt_script,
-                               js=js_resources, css=css_resources)
+        # make sure tmp folder exists
+        tmp_dir = os.path.join(os.getcwd(), 'tmp')
+        os.makedirs(tmp_dir, exist_ok=True)
+
+        # define a filepath (you can use UUIDs to make unique)
+        ldc_filename = 'ldc_result_{}.ecsv'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
+        ldc_filepath = os.path.join(tmp_dir, ldc_filename)
+        print_table.write(ldc_filepath, format='ascii.ecsv', overwrite=True)
+        session['ldc_result_path'] = ldc_filepath
+
+        # Store the tables in session (as ECSV strings)
+        if profile_spam_tables == '':
+            pass
+        else:
+            spam_filename = 'spam_result_{}.ecsv'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
+            spam_filepath = os.path.join(tmp_dir, spam_filename)
+            print_spam_table.write(spam_filepath, format='ascii.ecsv', overwrite=True)
+            session['spam_result_path'] = spam_filepath
+
+        return render_template('limb_darkening_results.html', form=form, table=profile_tables,
+                               spam_table=profile_spam_tables, script=script, plot=div, filt_plot=filt_plot,
+                               filt_script=filt_script, js=js_resources, css=css_resources)
 
     return render_template('limb_darkening.html', form=form)
 
@@ -1001,6 +988,24 @@ def save_generic_result():
 
     table_string = flask.request.form['data_file']
     return flask.Response(table_string, mimetype="text/dat", headers={"Content-disposition": "attachment; filename=generic.dat"})
+
+
+@app_exoctk.route('/ldc_result', methods=['POST'])
+def save_ldc_result():
+    ldc_path = session.get('ldc_result_path')
+    if not ldc_path or not os.path.exists(ldc_path):
+        return "File not found", 404
+
+    return send_file(ldc_path, as_attachment=True, download_name='ldc_result.csv')
+
+
+@app_exoctk.route('/spam_result', methods=['POST'])
+def save_spam_result():
+    spam_path = session.get('ldc_result_path')
+    if not spam_path or not os.path.exists(spam_path):
+        return "File not found", 404
+
+    return send_file(spam_path, as_attachment=True, download_name='spam_result.csv')
 
 
 @app_exoctk.route('/groups_integrations_download')
