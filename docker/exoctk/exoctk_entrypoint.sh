@@ -6,4 +6,6 @@ do
 done
 
 # run flask
-flask --app exoctk_app run
+# flask --app exoctk_app run
+
+python /exoctk/exoctk/exoctk/app_exoctk/app_exoctk.app
