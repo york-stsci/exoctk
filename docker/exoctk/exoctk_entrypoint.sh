@@ -6,6 +6,6 @@ do
 done
 
 # run flask
-flask --app app_exoctk run
+flask --app app_exoctk --port 5000 run
 
 # python /exoctk/exoctk/exoctk/exoctk_app/exoctk_app.py
