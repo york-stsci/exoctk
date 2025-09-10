@@ -355,7 +355,7 @@ def pa_contam():
 
 
 # Long-running Celery task
-@celery.task
+@celery.task(name='app_exoctk.run_contam_visibility_task')
 def run_contam_visibility_task(params):
     # Long-running logic
     targframe, starcube, results = fs.field_simulation(**params)
