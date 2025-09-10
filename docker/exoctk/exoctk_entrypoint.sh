@@ -1,6 +1,6 @@
 #!/bin/sh
 
-until cd /exoctk/exoctk/exoctk/exoctk_app
+until cd /exoctk/exoctk/exoctk
 do
     echo "Waiting for server volume..."
 done

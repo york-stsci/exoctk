@@ -37,7 +37,8 @@ RUN pip install svo-filters==0.4.4
 ARG exoctk_repo
 
 # Clone exoctk repository
-RUN git clone ${exoctk_repo}
+ADD https://api.github.com/repos/${exoctk_repo}/git/refs/heads/$EXOCTK_VERSION version.json
+RUN git clone https://github.com/${exoctk_repo}
 WORKDIR /exoctk/exoctk
 RUN git checkout $EXOCTK_VERSION
 RUN pip install -e .

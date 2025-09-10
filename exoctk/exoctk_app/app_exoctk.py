@@ -36,7 +36,7 @@ from celery import Celery
 
 # FLASK SET UP
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-app_exoctk = Flask(__name__)
+app_exoctk = Flask("app_exoctk")
 
 # define the cache config keys, remember that it can be done in a settings file
 app_exoctk.config['CACHE_TYPE'] = 'null'
