@@ -33,15 +33,19 @@ WORKDIR /pandexo/batman
 RUN pip install .
 WORKDIR /pandexo
 
+ARG pandexo_branch
+
 # Install pandexo
-RUN pip install numpy==1.26.4
-RUN pip install scipy==1.14.1
+# RUN pip install numpy==1.26.4
+# RUN pip install scipy==1.14.1
 # ***** NOTE *****
 # In the future, it would be useful to be able to either directly install this
 # with pip (i.e. pip install pandexo==VERSION), or do a git checkout of a given
 # version (i.e. git checkout VERSION)
+ADD https://api.github.com/repos/natashabatalha/PandExo/git/refs/heads/${pandexo_branch} version.json
 RUN git clone --recursive https://github.com/natashabatalha/PandExo.git
 WORKDIR /pandexo/PandExo
+RUN git checkout ${pandexo_branch}
 RUN pip install .
 RUN pip install pandeia.engine==${pandeia_version}
 
